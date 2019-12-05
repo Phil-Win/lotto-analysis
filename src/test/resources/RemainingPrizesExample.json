@@ -1,0 +1,45 @@
+{
+  "cms_game_igt_id": 316,
+  "game_name": "NAUGHTY OR NICE $1",
+  "prizesRemainingData": [{
+    "prize_level": 1,
+    "prize_amount": 1,
+    "prizes_remaining": 1305111,
+    "starting_amount": 1500718
+  }, {
+    "prize_level": 2,
+    "prize_amount": 2,
+    "prizes_remaining": 864356,
+    "starting_amount": 1000589
+  }, {
+    "prize_level": 3,
+    "prize_amount": 5,
+    "prizes_remaining": 428488,
+    "starting_amount": 500312
+  }, {
+    "prize_level": 4,
+    "prize_amount": 10,
+    "prizes_remaining": 170737,
+    "starting_amount": 200184
+  }, {
+    "prize_level": 5,
+    "prize_amount": 20,
+    "prizes_remaining": 25432,
+    "starting_amount": 29976
+  }, {
+    "prize_level": 6,
+    "prize_amount": 50,
+    "prizes_remaining": 3395,
+    "starting_amount": 4022
+  }, {
+    "prize_level": 7,
+    "prize_amount": 100,
+    "prizes_remaining": 843,
+    "starting_amount": 1002
+  }, {
+    "prize_level": 8,
+    "prize_amount": 500,
+    "prizes_remaining": 415,
+    "starting_amount": 500
+  }]
+}

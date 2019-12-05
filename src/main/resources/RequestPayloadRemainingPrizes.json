@@ -1,0 +1,5 @@
+{
+  "query": "{\n    getRetailTopPrizesRemainingByGameType(gameType: \"INSTANT\"){\n      cms_game_igt_id\n      game_name\n      prizesRemainingData {\n        prize_level\n        prize_amount\n        prizes_remaining\n        starting_amount\n      }\n    }\n  }",
+  "variables": null,
+  "operation": null
+}
