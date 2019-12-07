@@ -6,11 +6,12 @@ import phil.win.lottoanalysis.model.transformed.basic.Prize;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.*;
 
-import org.apache.commons.math3.util.CombinatoricsUtils;
-import phil.win.lottoanalysis.model.transformed.expectedvalue.ExpectedValue;
 import phil.win.lottoanalysis.model.transformed.expectedvalue.TicketCombinations;
+import phil.win.lottoanalysis.model.transformed.expectedvalue.ValueRow;
+import phil.win.lottoanalysis.model.transformed.expectedvalue.ValueTable;
 
 @Slf4j
 public class ExpectedValueCalculator {
@@ -22,8 +23,8 @@ public class ExpectedValueCalculator {
     private List<Prize> remainingPrizes;
     private List<Prize> initialPrizes;
     private BigDecimal  expectedValueTicketsPurchased;
-    private Map<BigInteger, BigInteger> valueCombinationMapInitial;
-    private Map<BigInteger, BigInteger> valueCombinationMapCurrent;
+    private TreeMap<BigInteger, BigInteger> valueCombinationMapInitial;
+    private TreeMap<BigInteger, BigInteger> valueCombinationMapCurrent;
 
     public ExpectedValueCalculator(Game game, Long ticketsPurchased) {
         this.heroTicketsPurchased   =   ticketsPurchased;
@@ -34,43 +35,119 @@ public class ExpectedValueCalculator {
         this.initialPrizes          =   game.getInitialPrizes();
     }
 
-    public ExpectedValue determineRangeCombinatorics(BigInteger lowValue, BigInteger highValue) {
-        ExpectedValue   expectedValue   =   new ExpectedValue();
 
-        expectedValue.setLowValue(lowValue);
-        expectedValue.setHighValue(highValue);
+    public ValueRow getValuesAbove(Long floor) {
+        generateCombinationMaps();
+        BigInteger  largestKey  =   (valueCombinationMapCurrent.lastKey().compareTo(valueCombinationMapInitial.lastKey()) > 0) ? valueCombinationMapCurrent.lastKey() : valueCombinationMapInitial.lastKey();
+        return determineRangeCombinatorics(new BigInteger(String.valueOf(floor)), largestKey);
+    }
 
-        TicketCombinations  ticketCombinationsCurrent   =   new TicketCombinations();
-        TicketCombinations  ticketCombinationsInitial   =   new TicketCombinations();
+    public ValueTable getValueRowListDollarRange(Long range) {
+        ValueTable  valueTable  =   new ValueTable();
+        List<ValueRow> valueRowList =   new ArrayList<ValueRow>();
+        generateCombinationMaps();
+        BigInteger  rangeAsBigInt   =   new BigInteger(String.valueOf(range));
+        Set<BigInteger> keys    =   valueCombinationMapCurrent.keySet();
+        BigInteger keyOfInterest = null;
+        BigInteger  lowValue    =   null;
+        for (Iterator<BigInteger> i = keys.iterator(); i.hasNext(); ) {
+            keyOfInterest   =   i.next();
+            if (lowValue    ==  null) {
+                lowValue    =   keyOfInterest;
+            }
 
-        this.valueCombinationMapCurrent =   generateValueAndCombinationMap(remainingPrizes);
-        this.valueCombinationMapInitial =   generateValueAndCombinationMap(initialPrizes);
-
-        TreeMap<BigInteger, BigInteger> currentTree = new TreeMap<BigInteger, BigInteger>(this.valueCombinationMapCurrent);
-        TreeMap<BigInteger, BigInteger> initialTree = new TreeMap<BigInteger, BigInteger>(this.valueCombinationMapInitial);
-
-        BigInteger countOfInterest  =   BigInteger.ZERO;
-        for (Map.Entry<BigInteger, BigInteger> entry : currentTree.subMap(lowValue, highValue).entrySet()) {
-            countOfInterest =   countOfInterest.add(entry.getValue());
+            if ((keyOfInterest.subtract(lowValue).compareTo(rangeAsBigInt) >= 0) || (!i.hasNext())) {
+                valueRowList.add(determineRangeCombinatorics(lowValue, keyOfInterest));
+                log.info("Printing the low and high key {}:{}", lowValue, keyOfInterest);
+                lowValue   =   null;
+            }
         }
-        ticketCombinationsCurrent.setWaysToGetScenario(countOfInterest);
-        ticketCombinationsCurrent.setTotalCombinations(CombinatoricsHelper.bigNChooseBigK(totalTicketsCurrent, heroTicketsPurchased));
-        expectedValue.setCurrent(ticketCombinationsCurrent);
+        
+        BigInteger  largestKey  =   (valueCombinationMapCurrent.lastKey().compareTo(valueCombinationMapInitial.lastKey()) > 0) ? valueCombinationMapCurrent.lastKey() : valueCombinationMapInitial.lastKey();
+        log.info("Printing the last key {}:{}and the largest {} along with the key of interest{}", valueCombinationMapCurrent.lastKey(), valueCombinationMapInitial.lastKey(), largestKey, keyOfInterest);
 
-        countOfInterest  =   BigInteger.ZERO;
-        for (Map.Entry<BigInteger, BigInteger> entry : initialTree.subMap(lowValue, highValue).entrySet()) {
-            countOfInterest =   countOfInterest.add(entry.getValue());
+        //valueRowList.add(determineRangeCombinatorics(keyOfInterest, largestKey));
+        valueTable.setValues(valueRowList);
+        valueTable.setCurrentExpectedValue(calculateEV(this.valueCombinationMapCurrent));
+        valueTable.setInitialExpectedValue(calculateEV(this.valueCombinationMapInitial));
+        return valueTable;
+    }
+
+    public ValueTable getValueRowListPercentRange(Double rangePercentAsDecimal) {
+        ValueTable  valueTable  =   new ValueTable();
+        List<ValueRow> valueRowList =   new ArrayList<ValueRow>();
+        generateCombinationMaps();
+        Set<BigInteger> keys    =   valueCombinationMapCurrent.keySet();
+        BigInteger keyOfInterest = null;
+        BigInteger  lowValue    =   null;
+        BigInteger  combinationCount    =   BigInteger.ZERO;
+        BigDecimal  numberOfCombinationsInRange    =   new BigDecimal(CombinatoricsHelper.bigNChooseBigK(this.totalTicketsCurrent, this.heroTicketsPurchased));
+        numberOfCombinationsInRange    =   numberOfCombinationsInRange.multiply(new BigDecimal(rangePercentAsDecimal));
+        for (Iterator<BigInteger> i = keys.iterator(); i.hasNext(); ) {
+            keyOfInterest   =   i.next();
+            combinationCount.add(valueCombinationMapCurrent.get(keyOfInterest));
+
+            if ((new BigDecimal(combinationCount).compareTo(numberOfCombinationsInRange) >= 0) || (!i.hasNext())) {
+                valueRowList.add(determineRangeCombinatorics(lowValue, keyOfInterest));
+                lowValue   =   null;
+            }
         }
-        ticketCombinationsInitial.setWaysToGetScenario(countOfInterest);
-        ticketCombinationsInitial.setTotalCombinations(CombinatoricsHelper.bigNChooseBigK(totalTicketsStart, heroTicketsPurchased));
-        expectedValue.setInitial(ticketCombinationsInitial);
+        BigInteger  largestKey  =   (valueCombinationMapCurrent.lastKey().compareTo(valueCombinationMapInitial.lastKey()) > 0) ? valueCombinationMapCurrent.lastKey() : valueCombinationMapInitial.lastKey();
+        if (keyOfInterest != null && !keyOfInterest.equals(largestKey)) {
+            valueRowList.add(determineRangeCombinatorics(keyOfInterest, largestKey));
+        }
+        valueTable.setValues(valueRowList);
+        valueTable.setCurrentExpectedValue(calculateEV(this.valueCombinationMapCurrent));
+        valueTable.setInitialExpectedValue(calculateEV(this.valueCombinationMapInitial));
+        return valueTable;
+    }
+
+    public BigDecimal   calculateEV(TreeMap<BigInteger, BigInteger> valueCombinationMap) {
+        BigDecimal ticketCostAndCount   =   new BigDecimal(String.valueOf(heroTicketsPurchased)).multiply(new BigDecimal(String.valueOf(-ticketCost)));
+        BigDecimal  multiplicationMap   =   new BigDecimal(mapMultiplier(valueCombinationMap));
+        BigDecimal  combinationSum      =   BigDecimal.ZERO;
+        for (Map.Entry<BigInteger, BigInteger> entry : valueCombinationMap.entrySet()) {
+            combinationSum  =   combinationSum.add(new BigDecimal(entry.getValue()));
+        }
+
+        multiplicationMap   =   multiplicationMap.divide(combinationSum, 200, RoundingMode.HALF_DOWN);
+        multiplicationMap   =   multiplicationMap.add(ticketCostAndCount);
+        return multiplicationMap;
+    }
+
+    public ValueRow determineRangeCombinatorics(BigInteger lowValue, BigInteger highValue) {
+        ValueRow   expectedValue   =   new ValueRow();
+        generateCombinationMaps();
+        expectedValue.setTicketCombinationCurrent(generateTicketCombination(lowValue, highValue, this.valueCombinationMapCurrent, this.totalTicketsCurrent));
+        expectedValue.setTicketCombinationInitial(generateTicketCombination(lowValue, highValue, this.valueCombinationMapInitial, this.totalTicketsStart));
 
         return expectedValue;
     }
 
+    private TicketCombinations  generateTicketCombination(BigInteger lowValue, BigInteger highValue, TreeMap<BigInteger, BigInteger> treeMap, Long totalTickets) {
+        log.info("Printing the low and high key generateTicketCombination {}:{}", lowValue, highValue);
+        TicketCombinations ticketCombinations   =   new TicketCombinations();
+        SortedMap<BigInteger, BigInteger> currentTree =  treeMap.subMap(lowValue, highValue);
+        ticketCombinations.setLowValue(lowValue);
+        ticketCombinations.setHighValue(highValue);
+        BigInteger combinationCount  =   BigInteger.ZERO;
+        BigDecimal valueAverage            =   BigDecimal.ZERO;
+        for (BigInteger key : currentTree.keySet()) {
+            log.info("Adding key:val of entry {}:{}", key, currentTree.get(key));
+            combinationCount =   combinationCount.add(currentTree.get(key));
+            valueAverage    =   valueAverage.add(new BigDecimal(key.multiply(currentTree.get(key))));
+        }
+        valueAverage    =   valueAverage.divide(new BigDecimal(combinationCount), 200, RoundingMode.HALF_DOWN);
+        ticketCombinations.setTotalCombinations(CombinatoricsHelper.bigNChooseBigK(totalTickets, this.heroTicketsPurchased));
+        ticketCombinations.setWaysToGetScenario(combinationCount);
+        log.info("Printing the low and high key and combo count generateTicketCombination {}:{}:{}", lowValue, highValue,combinationCount);
+        ticketCombinations.setAverageTicketValue(valueAverage);
+        return ticketCombinations;
+    }
 
-    protected Map<BigInteger, BigInteger> generateValueAndCombinationMap(List<Prize> prizes) {
-        Map<BigInteger, BigInteger> mapOfScenarioValueAndCombinations   =   new HashMap<BigInteger, BigInteger>();
+
+    protected TreeMap<BigInteger, BigInteger> generateValueAndCombinationMap(List<Prize> prizes) {
+        TreeMap<BigInteger, BigInteger> mapOfScenarioValueAndCombinations   =   new TreeMap<BigInteger, BigInteger>();
         List<Integer>   scenarioOfInterest;
         BigInteger      scenarioValue;
         BigInteger      scenarioCombinations;
@@ -119,14 +196,14 @@ public class ExpectedValueCalculator {
         return scenarioValue;
     }
 
-    public BigDecimal determineExpectedValue(Map<BigInteger, BigInteger> valueComboMap, Long totalTickets) {
+    public BigDecimal determineExpectedValue(TreeMap<BigInteger, BigInteger> valueComboMap, Long totalTickets) {
         BigDecimal expectedValue    =   new BigDecimal(mapMultiplier(valueComboMap));
         BigInteger totalTicketPurchaseCombination = CombinatoricsHelper.bigNChooseBigK(totalTickets, this.heroTicketsPurchased);
 
         return expectedValue.divide(new BigDecimal(totalTicketPurchaseCombination));
     }
 
-    public BigInteger mapMultiplier(Map<BigInteger, BigInteger> valueCombinationMap) {
+    public BigInteger mapMultiplier(TreeMap<BigInteger, BigInteger> valueCombinationMap) {
         BigInteger returnValue    =   BigInteger.ZERO;
         BigInteger valueOfInterest;
         for (Map.Entry<BigInteger, BigInteger> entryValueCombination : valueCombinationMap.entrySet()) {
@@ -145,19 +222,27 @@ public class ExpectedValueCalculator {
     }
 
     protected Boolean   setValueCombinationMapInitial() {
-        Map<BigInteger, BigInteger> mapOfInitialValueCombinations   =   generateValueAndCombinationMap(this.initialPrizes);
+        TreeMap<BigInteger, BigInteger> mapOfInitialValueCombinations   =   generateValueAndCombinationMap(this.initialPrizes);
         this.valueCombinationMapInitial =   mapOfInitialValueCombinations;
         return true;
     }
 
     protected Boolean   setValueCombinationMapCurrent() {
-        Map<BigInteger, BigInteger> mapOfInitialValueCombinations   =   generateValueAndCombinationMap(this.remainingPrizes);
+        TreeMap<BigInteger, BigInteger> mapOfInitialValueCombinations   =   generateValueAndCombinationMap(this.remainingPrizes);
         this.valueCombinationMapCurrent =   mapOfInitialValueCombinations;
         return true;
     }
 
     public void setHeroTicketsPurchased(Long heroTicketsPurchased) {
         this.heroTicketsPurchased = heroTicketsPurchased;
+        this.valueCombinationMapInitial = null;
+        this.valueCombinationMapCurrent = null;
+        generateCombinationMaps();
     }
-
+    private void generateCombinationMaps() {
+        if (this.valueCombinationMapInitial == null || this.valueCombinationMapCurrent == null) {
+            this.valueCombinationMapCurrent =   generateValueAndCombinationMap(remainingPrizes);
+            this.valueCombinationMapInitial =   generateValueAndCombinationMap(initialPrizes);
+        }
+    }
 }

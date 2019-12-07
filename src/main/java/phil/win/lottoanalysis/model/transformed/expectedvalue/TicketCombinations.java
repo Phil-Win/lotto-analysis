@@ -12,7 +12,9 @@ import java.math.RoundingMode;
 @AllArgsConstructor
 @Data
 public class TicketCombinations {
-
+    private BigInteger highValue;
+    private BigInteger lowValue;
+    private BigDecimal      averageTicketValue;
     private BigInteger  waysToGetScenario;
     private BigInteger  totalCombinations;
 

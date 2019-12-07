@@ -10,7 +10,8 @@ import phil.win.lottoanalysis.combinatorics.ExpectedValueCalculator;
 import phil.win.lottoanalysis.model.raw.odds.GetCMSGame;
 import phil.win.lottoanalysis.model.raw.prizesremain.Data;
 import phil.win.lottoanalysis.model.transformed.basic.Game;
-import phil.win.lottoanalysis.model.transformed.expectedvalue.ExpectedValue;
+import phil.win.lottoanalysis.model.transformed.expectedvalue.ValueRow;
+import phil.win.lottoanalysis.model.transformed.expectedvalue.ValueTable;
 import phil.win.lottoanalysis.processor.TransformedGames;
 import phil.win.lottoanalysis.service.MichiganRemainingPrizesService;
 
@@ -27,38 +28,31 @@ public class LottoTransformedApi {
     @Autowired
     TransformedGames transformedGames;
 
-    @GetMapping("/update")
-    public ResponseEntity<Boolean> getGames() {
-        Data rawData    =   michiganRemainingPrizesService.getRawPrizesRemaining();
-        List<GetCMSGame> rawOddsAndPrice    =   michiganRemainingPrizesService.getRawOdds();
-        return ResponseEntity.ok().body(michiganRemainingPrizesService.transformRawData(rawData, rawOddsAndPrice));
-    }
-
-    @GetMapping("/combinations")
-    public ResponseEntity<ExpectedValue> getCombinations(@RequestParam Integer low, @RequestParam Integer high,
-                                                         @RequestParam Integer gameid, @RequestParam Integer ticketspurchased) {
-        Game gameOfInterest = null;
-        ExpectedValue   expectedValue;
-
-        if (transformedGames.getGameList() == null) {
-            Data rawData    =   michiganRemainingPrizesService.getRawPrizesRemaining();
-            List<GetCMSGame> rawOddsAndPrice    =   michiganRemainingPrizesService.getRawOdds();
-            michiganRemainingPrizesService.transformRawData(rawData, rawOddsAndPrice);
-        }
-        for (Game game : transformedGames.getGameList()) {
-            if (game.getId().equals(gameid.longValue())) {
-                gameOfInterest  =   game;
-                break;
-            }
-        }
+    @GetMapping("/dollarrange")
+    public ResponseEntity<ValueTable> dollarrange(@RequestParam Long range,
+                                                    @RequestParam Integer gameid, @RequestParam Integer ticketspurchased) {
+        Game gameOfInterest = transformedGames.getGameById(gameid);
+        ExpectedValueCalculator expectedValueCalculator =   new ExpectedValueCalculator(gameOfInterest, ticketspurchased.longValue());
 
 
         if (gameOfInterest == null) {
             return ResponseEntity.notFound().build();
         } else {
-            ExpectedValueCalculator expectedValueCalculator =   new ExpectedValueCalculator(gameOfInterest, ticketspurchased.longValue());
-            expectedValue   =   expectedValueCalculator.determineRangeCombinatorics(new BigInteger(String.valueOf(low)), new BigInteger(String.valueOf(high)));
-            return ResponseEntity.ok(expectedValue);
+            return ResponseEntity.ok(expectedValueCalculator.getValueRowListDollarRange(range));
+        }
+    }
+
+    @GetMapping("/percentrange")
+    public ResponseEntity<ValueTable> getpercentrange(@RequestParam Double range,
+                                                      @RequestParam Integer gameid, @RequestParam Integer ticketspurchased) {
+        Game gameOfInterest = transformedGames.getGameById(gameid);
+        ExpectedValueCalculator expectedValueCalculator =   new ExpectedValueCalculator(gameOfInterest, ticketspurchased.longValue());
+
+
+        if (gameOfInterest == null) {
+            return ResponseEntity.notFound().build();
+        } else {
+            return ResponseEntity.ok(expectedValueCalculator.getValueRowListPercentRange(range));
         }
     }
 

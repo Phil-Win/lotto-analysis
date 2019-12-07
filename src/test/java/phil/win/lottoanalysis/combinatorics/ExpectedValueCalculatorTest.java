@@ -13,10 +13,7 @@ import phil.win.lottoanalysis.model.transformed.basic.Prize;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -35,8 +32,8 @@ class ExpectedValueCalculatorTest {
         when(game.getCost()).thenReturn(Long.valueOf("1"));
         when(game.getEstimatedInitialTotalNumberTickets()).thenReturn(Long.valueOf("5000000"));
         when(game.getEstimatedRemainingTotalNumberTickets()).thenReturn(Long.valueOf("65461"));
-        when(game.getRemainingPrizes()).thenReturn(null);
-        when(game.getInitialPrizes()).thenReturn(null);
+        when(game.getRemainingPrizes()).thenReturn(new ArrayList<Prize>());
+        when(game.getInitialPrizes()).thenReturn(new ArrayList<Prize>());
         expectedValueCalculator =   new ExpectedValueCalculator(game, Long.parseLong("1"));
     }
 
@@ -55,7 +52,7 @@ class ExpectedValueCalculatorTest {
     }
     @Test
     void generateValueAndCombinationMap_2Tickets() {
-        expectedValueCalculator.setHeroTicketsPurchased(Long.valueOf("2"));
+        expectedValueCalculator =   new ExpectedValueCalculator(game, Long.parseLong("2"));
         Map<BigInteger, BigInteger> expectedValue    = new HashMap<BigInteger, BigInteger>()  ;
         expectedValue.put(new BigInteger("2"), new BigInteger("124750"));
         expectedValue.put(new BigInteger("6"), new BigInteger("100000"));
@@ -84,7 +81,7 @@ class ExpectedValueCalculatorTest {
 
     @Test
     void determineExpectedValue() {
-        Map<BigInteger, BigInteger> inputMap    =   new HashMap<BigInteger, BigInteger>();
+        TreeMap<BigInteger, BigInteger> inputMap    =   new TreeMap<BigInteger, BigInteger>();
         inputMap.put(new BigInteger("1"), new BigInteger("500"));
         inputMap.put(new BigInteger("5"), new BigInteger("200"));
         inputMap.put(new BigInteger("100"), new BigInteger("3"));
@@ -96,7 +93,7 @@ class ExpectedValueCalculatorTest {
 
     @Test
     void mapMultiplier() {
-        Map<BigInteger, BigInteger> inputMap    =   new HashMap<BigInteger, BigInteger>();
+        TreeMap<BigInteger, BigInteger> inputMap    =   new TreeMap<BigInteger, BigInteger>();
         inputMap.put(new BigInteger("1"), new BigInteger("500"));
         inputMap.put(new BigInteger("5"), new BigInteger("200"));
         inputMap.put(new BigInteger("100"), new BigInteger("3"));
