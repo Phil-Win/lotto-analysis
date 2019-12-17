@@ -13,6 +13,7 @@ public class DailyGameDataRefresher {
 
     @Scheduled(cron = "0 0 * * * *")
     public void resetTransformedGames() {
+
         transformedGames.setGameList();
     }
 

@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import phil.win.lottoanalysis.model.raw.odds.GetCMSGame;
 import phil.win.lottoanalysis.model.raw.prizesremain.Data;
 import phil.win.lottoanalysis.model.transformed.basic.Game;
+import phil.win.lottoanalysis.model.transformed.basic.Lotto;
 import phil.win.lottoanalysis.service.MichiganRemainingPrizesService;
 
 import java.util.List;
@@ -18,6 +19,7 @@ public class TransformedGames {
     MichiganRemainingPrizesService michiganRemainingPrizesService;
 
     public List<Game> gameList;
+
 
     public List<Game> getGameList() {
         if (this.gameList   == null) {
@@ -44,7 +46,10 @@ public class TransformedGames {
         List<GetCMSGame> rawOddsAndPrice    =   michiganRemainingPrizesService.getRawOdds();
         this.michiganRemainingPrizesService.transformRawData(rawData, rawOddsAndPrice);
     }
+
+
     public void setGameList(List<Game> gameList) {
         this.gameList = gameList;
     }
+
 }

@@ -109,8 +109,11 @@ public class ExpectedValueCalculator {
         for (Map.Entry<BigInteger, BigInteger> entry : valueCombinationMap.entrySet()) {
             combinationSum  =   combinationSum.add(new BigDecimal(entry.getValue()));
         }
-
-        multiplicationMap   =   multiplicationMap.divide(combinationSum, 200, RoundingMode.HALF_DOWN);
+        if (combinationSum.equals(BigDecimal.ZERO)) {
+            multiplicationMap   =   BigDecimal.ZERO;
+        } else {
+            multiplicationMap   =   multiplicationMap.divide(combinationSum, 200, RoundingMode.HALF_DOWN);
+        }
         multiplicationMap   =   multiplicationMap.add(ticketCostAndCount);
         return multiplicationMap;
     }
@@ -137,7 +140,11 @@ public class ExpectedValueCalculator {
             combinationCount =   combinationCount.add(currentTree.get(key));
             valueAverage    =   valueAverage.add(new BigDecimal(key.multiply(currentTree.get(key))));
         }
-        valueAverage    =   valueAverage.divide(new BigDecimal(combinationCount), 200, RoundingMode.HALF_DOWN);
+        if (combinationCount.equals(BigInteger.ZERO)) {
+            valueAverage    =   BigDecimal.ZERO;
+        } else {
+            valueAverage    =   valueAverage.divide(new BigDecimal(combinationCount), 200, RoundingMode.HALF_DOWN);
+        }
         ticketCombinations.setTotalCombinations(CombinatoricsHelper.bigNChooseBigK(totalTickets, this.heroTicketsPurchased));
         ticketCombinations.setWaysToGetScenario(combinationCount);
         log.info("Printing the low and high key and combo count generateTicketCombination {}:{}:{}", lowValue, highValue,combinationCount);
@@ -199,8 +206,11 @@ public class ExpectedValueCalculator {
     public BigDecimal determineExpectedValue(TreeMap<BigInteger, BigInteger> valueComboMap, Long totalTickets) {
         BigDecimal expectedValue    =   new BigDecimal(mapMultiplier(valueComboMap));
         BigInteger totalTicketPurchaseCombination = CombinatoricsHelper.bigNChooseBigK(totalTickets, this.heroTicketsPurchased);
-
-        return expectedValue.divide(new BigDecimal(totalTicketPurchaseCombination));
+        if (totalTicketPurchaseCombination.equals(BigInteger.ZERO)) {
+            return BigDecimal.ZERO;
+        } else {
+            return expectedValue.divide(new BigDecimal(totalTicketPurchaseCombination));
+        }
     }
 
     public BigInteger mapMultiplier(TreeMap<BigInteger, BigInteger> valueCombinationMap) {

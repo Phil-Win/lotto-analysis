@@ -16,7 +16,11 @@ public class ValueRow {
     private TicketCombinations  ticketCombinationInitial;
 
     public BigDecimal  getOddsChange() {
-        return ticketCombinationCurrent.getProbability().divide(ticketCombinationInitial.getProbability(), 200, RoundingMode.HALF_DOWN);
+        try {
+            return ticketCombinationCurrent.getProbability().divide(ticketCombinationInitial.getProbability(), 200, RoundingMode.HALF_DOWN);
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
     }
 
     public BigDecimal getAverageDifference() {

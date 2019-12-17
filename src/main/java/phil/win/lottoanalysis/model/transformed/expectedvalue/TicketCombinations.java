@@ -23,6 +23,10 @@ public class TicketCombinations {
     }
 
     public BigDecimal  getProbability() {
-        return new BigDecimal(waysToGetScenario).divide(new BigDecimal(totalCombinations), 200, RoundingMode.HALF_DOWN);
+        if (totalCombinations.equals(BigInteger.ZERO)) {
+            return BigDecimal.ZERO;
+        } else {
+            return new BigDecimal(waysToGetScenario).divide(new BigDecimal(totalCombinations), 200, RoundingMode.HALF_DOWN);
+        }
     }
 }

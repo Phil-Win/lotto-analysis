@@ -17,6 +17,10 @@ public class ValueTable {
     public BigDecimal   currentExpectedValue;
 
     public BigDecimal   getExpectedValuePercentIncrease() {
-        return currentExpectedValue.divide(initialExpectedValue, 200, RoundingMode.HALF_DOWN);
+        if (currentExpectedValue.equals(BigDecimal.ZERO)) {
+            return BigDecimal.ZERO;
+        } else {
+            return currentExpectedValue.divide(initialExpectedValue, 200, RoundingMode.HALF_DOWN);
+        }
     }
 }

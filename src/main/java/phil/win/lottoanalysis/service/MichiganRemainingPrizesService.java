@@ -12,6 +12,7 @@ import phil.win.lottoanalysis.model.raw.prizesremain.GetRetailTopPrizesRemaining
 import phil.win.lottoanalysis.model.raw.prizesremain.InstantGamePrizesRemainingResponse;
 import phil.win.lottoanalysis.model.requestpayload.RequestPayload;
 import phil.win.lottoanalysis.model.transformed.basic.Game;
+import phil.win.lottoanalysis.model.transformed.basic.Lotto;
 import phil.win.lottoanalysis.processor.TransformRawDataUtil;
 import phil.win.lottoanalysis.processor.TransformedGames;
 
@@ -81,6 +82,7 @@ public class MichiganRemainingPrizesService {
             ticketCostOfInterest    =   TransformRawDataUtil.transformTicketPriceStringToBigDecimal(gameOddsOfInterest.getDisplayedTicketPrice()).longValue();
             oddsOfInterestAsString  =   gameOddsOfInterest.getOverallOdds();
             gameOfInterest.setCost(ticketCostOfInterest);
+            gameOfInterest.setImageUrl(gameOddsOfInterest.getLogoUrl());
             gameOfInterest.setEstimatedInitialTotalNumberTickets(TransformRawDataUtil.getInitialTicketCount(game, oddsOfInterestAsString));
             gameOfInterest.setEstimatedRemainingTotalNumberTickets(TransformRawDataUtil.getRemainingTicketCount(game, oddsOfInterestAsString));
             gameOfInterest.setRemainingWinningTicketCount(TransformRawDataUtil.getRemainingPrizeCount(game));
@@ -92,7 +94,6 @@ public class MichiganRemainingPrizesService {
         transformedGames.setGameList(listOfGames);
         return true;
     }
-
 
 
 }
